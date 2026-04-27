@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' services.nvd.nist.gov www.cisa.gov; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' services.nvd.nist.gov www.cisa.gov raw.githubusercontent.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
 <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 <title>AppSec Intel Hub</title>
 <style>
@@ -260,8 +260,22 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
 .cve-plink-item:last-child{border-bottom:none}
 .cve-plink-name{font-size:12px;font-weight:600;flex:1}
 .cve-plink-src{font-size:10px;color:var(--muted);white-space:nowrap}
-</style>
-
+/* ── Finding Panel ── */
+#findingPanel{display:none;position:fixed;top:0;right:0;bottom:0;width:520px;max-width:100vw;background:var(--panel);border-left:1px solid var(--border);box-shadow:-8px 0 32px rgba(0,0,0,.45);z-index:1000;flex-direction:column}
+#findingPanel.open{display:flex}
+.fp-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.fp-head h3{flex:1;font-size:14px;font-weight:800;letter-spacing:-.2px;margin:0}
+.fp-copy-btn{background:linear-gradient(135deg,var(--ih-accent),var(--ih-accent2));border:none;border-radius:8px;color:#000;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;font-family:inherit}
+.fp-copy-btn:hover{opacity:.85}
+.fp-close-btn{background:var(--soft);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;font-family:inherit;margin-left:4px}
+.fp-close-btn:hover{color:var(--text);border-color:var(--text)}
+.fp-body{flex:1;overflow-y:auto;padding:18px 20px}
+.fp-body::-webkit-scrollbar{width:5px}
+.fp-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.fp-content{font-size:12.5px;line-height:1.75;color:var(--text);white-space:pre-wrap;font-family:'Segoe UI',system-ui,sans-serif}
+.fp-spinner{display:flex;align-items:center;gap:10px;padding:32px 0;color:var(--muted);font-size:13px}
+.fp-spinner-ring{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--ih-accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -276,6 +290,17 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
   <div class="content">
     <div id="chipsBar" style="display:none"></div>
     <div id="card"></div>
+  </div>
+</div>
+<!-- Finding Panel (slide-in) -->
+<div id="findingPanel">
+  <div class="fp-head">
+    <h3 id="fpTitle">✍️ Security Finding</h3>
+    <button class="fp-copy-btn" onclick="window.fpCopy()">📋 Copy</button>
+    <button class="fp-close-btn" onclick="window.fpClose()">✕ Close</button>
+  </div>
+  <div class="fp-body">
+    <div id="fpBody"></div>
   </div>
 </div>
 <script>
@@ -721,18 +746,56 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
     if (res) res.innerHTML = '<div class="ih-empty">🔍 Search CVE IDs, keywords, or use the chips above to explore live threat intelligence.</div>';
   };
 
+  /* ── Finding Panel helpers ── */
+  let _fpText = '';
+
+  window.fpClose = function(){
+    const p = document.getElementById('findingPanel');
+    if (p) p.classList.remove('open');
+  };
+
+  window.fpCopy = async function(){
+    if (!_fpText) return;
+    try {
+      await navigator.clipboard.writeText(_fpText);
+      const btn = document.querySelector('.fp-copy-btn');
+      if (btn){ btn.textContent = '✅ Copied!'; setTimeout(()=>{ btn.textContent = '📋 Copy'; }, 1800); }
+    } catch(e){
+      prompt('Copy the finding report:', _fpText);
+    }
+  };
+
+  function fpShow(cveId, text){
+    _fpText = text;
+    const title = document.getElementById('fpTitle');
+    const body  = document.getElementById('fpBody');
+    const panel = document.getElementById('findingPanel');
+    if (!panel) return;
+    if (title) title.textContent = '✍️ Finding — ' + cveId;
+    if (body)  body.innerHTML = '<div class="fp-content">' + esc(text) + '</div>';
+    panel.classList.add('open');
+  }
+
+  function fpLoading(cveId){
+    _fpText = '';
+    const title = document.getElementById('fpTitle');
+    const body  = document.getElementById('fpBody');
+    const panel = document.getElementById('findingPanel');
+    if (!panel) return;
+    if (title) title.textContent = '✍️ Generating — ' + cveId + '…';
+    if (body)  body.innerHTML = '<div class="fp-spinner"><div class="fp-spinner-ring"></div>Fetching CVE data and generating finding report…</div>';
+    panel.classList.add('open');
+  }
+
   window.intelWriteFinding = async function(cveId){
+    fpLoading(cveId);
     try {
       const result = await window.generateFindingFromCVE(cveId);
       const cleaned = result.replace(/\*\*(.+?)\*\*/g,'$1').replace(/`(.+?)`/g,'$1');
-      try {
-        await navigator.clipboard.writeText(cleaned);
-        alert('\u2705 Finding for ' + cveId + ' copied to clipboard!');
-      } catch(e) {
-        prompt('Copy the security finding report:', cleaned);
-      }
+      fpShow(cveId, cleaned);
     } catch(e) {
-      alert('\u26a0\ufe0f Could not generate finding: ' + e.message);
+      const body = document.getElementById('fpBody');
+      if (body) body.innerHTML = '<div class="fp-content" style="color:var(--red)">⚠️ Could not generate finding:\n' + esc(e.message) + '</div>';
     }
   };
 
@@ -1691,6 +1754,25 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
     return out;
   };
 
+})();
+
+/* ── Load Playbook vuln-classification data so Playbook button works ── */
+(function loadPlaybookData(){
+  const BASE = 'https://raw.githubusercontent.com/NAGGI-AI/API-Security-Playbook/main/vuln-classification/';
+  const FILES = { waapi: 'api.json', llm: 'llm.json', wa: 'webapp.json' };
+  window._vcData = null;
+  const loaded = {};
+  Object.entries(FILES).forEach(function([key, file]){
+    fetch(BASE + file)
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(data){ loaded[key] = data; })
+      .catch(function(e){ console.warn('[IntelHub] Could not load playbook data for', key, e); })
+      .finally(function(){
+        if (Object.keys(loaded).length === Object.keys(FILES).length){
+          window._vcData = loaded;
+        }
+      });
+  });
 })();
 
 window.addEventListener('DOMContentLoaded', function() {
