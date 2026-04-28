@@ -78,6 +78,7 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
 .ih-nav-item.active.api-mode{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#22c55e}
 .ih-nav-item.active.llm-mode{background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.3);color:#ec4899}
 .ih-nav-item.active.nist-mode{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.3);color:#06b6d4}
+.ih-nav-item.active.sans-mode{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:#f97316}
 .ih-nav-ico{width:16px;text-align:center;flex-shrink:0}
 .ih-nav-badge{margin-left:auto;font-size:9px;font-weight:700;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.28);border-radius:6px;padding:1px 7px;color:#818cf8}
 .ih-live-pill{margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;letter-spacing:.04em;color:var(--ih-accent);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:4px;padding:1px 5px}
@@ -197,6 +198,7 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
 .cwe-tab.active-wa{background:#6366f1;border-color:#6366f1;color:#fff}
 .cwe-tab.active-api{background:#16a34a;border-color:#22c55e;color:#fff}
 .cwe-tab.active-llm{background:#9d174d;border-color:#ec4899;color:#fff}
+.cwe-tab.active-sans{background:#c2410c;border-color:#f97316;color:#fff}
 /* OWASP change badges */
 .owasp-change-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:5px;display:inline-block}
 .owasp-change-badge.new{background:#16a34a15;border:1px solid #16a34a50;color:#16a34a}
@@ -260,6 +262,23 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
 .cve-plink-item:last-child{border-bottom:none}
 .cve-plink-name{font-size:12px;font-weight:600;flex:1}
 .cve-plink-src{font-size:10px;color:var(--muted);white-space:nowrap}
+/* Standards row on CVE cards */
+.cve-standards{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
+.cve-std-label{font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:2px}
+.cve-std-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;cursor:pointer;transition:opacity .15s;border:1px solid}
+.cve-std-badge:hover{opacity:.75}
+.cve-std-badge.wa{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.4);color:#818cf8}
+.cve-std-badge.api{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#4ade80}
+.cve-std-badge.llm{background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.35);color:#f472b6}
+.cve-std-badge.sans{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.35);color:#fb923c}
+/* SANS Top 25 browser */
+.sans-rank-badge{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;font-size:13px;font-weight:900;flex-shrink:0}
+.sans-card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;transition:border-color .2s,box-shadow .2s;cursor:pointer}
+.sans-card:hover{border-color:#f97316;box-shadow:0 4px 20px rgba(249,115,22,.15)}
+.sans-card-body{min-width:0}
+.sans-card-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.sans-card-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sans-score{font-size:18px;font-weight:900;color:#f97316;white-space:nowrap}
 /* ── Finding Panel ── */
 #findingPanel{display:none;position:fixed;top:0;right:0;bottom:0;width:520px;max-width:100vw;background:var(--panel);border-left:1px solid var(--border);box-shadow:-8px 0 32px rgba(0,0,0,.45);z-index:1000;flex-direction:column}
 #findingPanel.open{display:flex}
@@ -432,6 +451,7 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
           ? `<span class="cve-chip cwe-chip-link" onclick="window.openCWERef('${m[1]}')" title="View CWE taxonomy">${esc(c)} ↗</span>`
           : `<span class="cve-chip">${esc(c)}</span>`;
       }).join('')}</div>` : ''}
+      ${_cveStandardsBadges(cwes)}
       ${kev ? `<div class="kev-detail" id="kev-detail-${esc(id)}">
         <strong>Vulnerability Name:</strong> ${esc(kev.vulnerabilityName||'')} &nbsp;·&nbsp;
         <strong>Vendor:</strong> ${esc(kev.vendorProject||'')} &nbsp;·&nbsp;
@@ -506,6 +526,9 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
             <button class="ih-nav-item ih-nav-sub${activeNav==='llm'?' active llm-mode':''}" id="ihn-llm" onclick="window.ihNav('llm',this)">
               <span class="ih-nav-sub-arrow">›</span>OWASP LLM 2025
             </button>
+            <button class="ih-nav-item ih-nav-sub${activeNav==='sans25'?' active sans-mode':''}" id="ihn-sans25" onclick="window.ihNav('sans25',this)">
+              <span class="ih-nav-sub-arrow">›</span>CWE/SANS Top 25
+            </button>
           </div>
         </nav>
         <div class="ih-ws-wrap">
@@ -544,15 +567,16 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
 
   function _ihActivateNav(id){
     document.querySelectorAll('.ih-nav-item').forEach(el=>{
-      el.classList.remove('active','cwe-mode','api-mode','llm-mode','nist-mode');
+      el.classList.remove('active','cwe-mode','api-mode','llm-mode','nist-mode','sans-mode');
     });
     const el = document.getElementById('ihn-'+id);
     if (el){
       el.classList.add('active');
-      if (id==='cwe')  el.classList.add('cwe-mode');
-      if (id==='api')  el.classList.add('api-mode');
-      if (id==='llm')  el.classList.add('llm-mode');
-      if (id==='nist') el.classList.add('nist-mode');
+      if (id==='cwe')    el.classList.add('cwe-mode');
+      if (id==='api')    el.classList.add('api-mode');
+      if (id==='llm')    el.classList.add('llm-mode');
+      if (id==='nist')   el.classList.add('nist-mode');
+      if (id==='sans25') el.classList.add('sans-mode');
     }
   }
 
@@ -565,9 +589,129 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
     else if (mode==='kev') { window.ihShowKEV(); }
     else if (mode==='cwe') { renderCWEBrowser('cwe'); }
     else if (mode==='api') { renderCWEBrowser('api'); }
-    else if (mode==='llm') { renderCWEBrowser('llm'); }
-    else if (mode==='nist'){ _showNISTRef(); }
+    else if (mode==='llm')    { renderCWEBrowser('llm'); }
+    else if (mode==='sans25') { renderSANS25Browser(); }
+    else if (mode==='nist')   { _showNISTRef(); }
   };
+
+  /* ── SANS/CWE Top 25 — 2023 (MITRE) ── */
+  /* [rank, cweId, name, score, category] */
+  const SANS_TOP25 = [
+    [1,'787','Out-of-bounds Write',63.72,'Memory Safety'],
+    [2,'79','Improper Neutralization of Input During Web Page Generation (XSS)',45.54,'Injection'],
+    [3,'89','Improper Neutralization of Special Elements used in an SQL Command (SQL Injection)',34.27,'Injection'],
+    [4,'416','Use After Free',16.71,'Memory Safety'],
+    [5,'78','Improper Neutralization of Special Elements used in an OS Command (OS Command Injection)',15.65,'Injection'],
+    [6,'20','Improper Input Validation',15.50,'Input Handling'],
+    [7,'125','Out-of-bounds Read',14.60,'Memory Safety'],
+    [8,'22','Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)',14.11,'File Access'],
+    [9,'352','Cross-Site Request Forgery (CSRF)',11.73,'Access Control'],
+    [10,'434','Unrestricted Upload of Dangerous File Type',10.41,'File Access'],
+    [11,'862','Missing Authorization',6.90,'Access Control'],
+    [12,'476','NULL Pointer Dereference',6.59,'Memory Safety'],
+    [13,'287','Improper Authentication',6.39,'Access Control'],
+    [14,'190','Integer Overflow or Wraparound',5.89,'Memory Safety'],
+    [15,'502','Deserialization of Untrusted Data',5.56,'Input Handling'],
+    [16,'77','Improper Neutralization of Special Elements used in a Command (Command Injection)',4.95,'Injection'],
+    [17,'119','Improper Restriction of Operations within the Bounds of a Memory Buffer',4.75,'Memory Safety'],
+    [18,'798','Use of Hard-coded Credentials',4.57,'Credentials'],
+    [19,'918','Server-Side Request Forgery (SSRF)',4.56,'Network'],
+    [20,'306','Missing Authentication for Critical Function',4.41,'Access Control'],
+    [21,'362','Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)',3.57,'Concurrency'],
+    [22,'269','Improper Privilege Management',3.48,'Access Control'],
+    [23,'94','Improper Control of Generation of Code (Code Injection)',3.39,'Injection'],
+    [24,'863','Incorrect Authorization',3.28,'Access Control'],
+    [25,'276','Incorrect Default Permissions',2.96,'Configuration'],
+  ];
+
+  /* Build reverse index: CWE ID → SANS rank (used by Standards row) */
+  const _SANS_RANK = Object.fromEntries(SANS_TOP25.map(([r,id])=>[id,r]));
+
+  /* Build reverse index: CWE ID → OWASP API category */
+  const _CWE_TO_API = {};
+  for (const [cat, entry] of Object.entries(OWASP_API_DB)){
+    for (const cweId of (entry[6]||[])) _CWE_TO_API[cweId] = cat;
+  }
+
+  /* Build reverse index: CWE ID → OWASP LLM category */
+  const _CWE_TO_LLM = {};
+  for (const [cat, entry] of Object.entries(OWASP_LLM_DB)){
+    for (const cweId of (entry[6]||[])) _CWE_TO_LLM[cweId] = cat;
+  }
+
+  /* Generate standards badges HTML for a list of CWE strings like ['CWE-89','CWE-79'] */
+  function _cveStandardsBadges(cwes){
+    if (!cwes || !cwes.length) return '';
+    const seenWA = new Set(), seenAPI = new Set(), seenLLM = new Set(), seenSANS = new Map();
+    for (const c of cwes){
+      const m = c.match(/CWE-(\d+)/i);
+      if (!m) continue;
+      const id = m[1];
+      const info = CWE_DB[id];
+      if (info && info[1]) seenWA.add(info[1]);
+      if (_CWE_TO_API[id]) seenAPI.add(_CWE_TO_API[id]);
+      if (_CWE_TO_LLM[id]) seenLLM.add(_CWE_TO_LLM[id]);
+      if (_SANS_RANK[id]) seenSANS.set(id, _SANS_RANK[id]);
+    }
+    const badges = [];
+    for (const cat of seenWA){
+      const name = OWASP_CAT[cat] ? OWASP_CAT[cat][0] : cat;
+      badges.push(`<span class="cve-std-badge wa" onclick="event.stopPropagation();window.openCWERef('cwe')" title="OWASP Web App 2021">${esc(cat)}: ${esc(name.length>28?name.slice(0,28)+'…':name)}</span>`);
+    }
+    for (const cat of seenAPI){
+      const name = OWASP_API_DB[cat] ? OWASP_API_DB[cat][0] : cat;
+      badges.push(`<span class="cve-std-badge api" onclick="event.stopPropagation();window.ihNav('api')" title="OWASP API Security 2023">${esc(cat)}: ${esc(name.length>28?name.slice(0,28)+'…':name)}</span>`);
+    }
+    for (const cat of seenLLM){
+      const name = OWASP_LLM_DB[cat] ? OWASP_LLM_DB[cat][0] : cat;
+      badges.push(`<span class="cve-std-badge llm" onclick="event.stopPropagation();window.ihNav('llm')" title="OWASP LLM Top 10 2025">${esc(cat)}: ${esc(name.length>28?name.slice(0,28)+'…':name)}</span>`);
+    }
+    for (const [id, rank] of seenSANS){
+      badges.push(`<span class="cve-std-badge sans" onclick="event.stopPropagation();window.renderCWEDetail('${esc(id)}')" title="CWE/SANS Top 25">SANS #${rank} · CWE-${esc(id)}</span>`);
+    }
+    if (!badges.length) return '';
+    return `<div class="cve-standards"><span class="cve-std-label">Standards</span>${badges.join('')}</div>`;
+  }
+
+  const _SANS_CAT_COLOR = {
+    'Injection':'#ef4444','Memory Safety':'#f97316','Input Handling':'#eab308',
+    'File Access':'#84cc16','Access Control':'#22c55e','Credentials':'#06b6d4',
+    'Network':'#3b82f6','Concurrency':'#8b5cf6','Configuration':'#ec4899',
+  };
+
+  function renderSANS25Browser(){
+    ensureIHLayout('sans25');
+    _ihActivateNav('sans25');
+    const cards = SANS_TOP25.map(([rank, cweId, name, score, cat])=>{
+      const color = _SANS_CAT_COLOR[cat] || '#f97316';
+      const rankColor = rank <= 5 ? '#ef4444' : rank <= 10 ? '#f97316' : rank <= 15 ? '#eab308' : '#6b7280';
+      const cweInfo = CWE_DB[cweId];
+      const owaspCat = cweInfo ? cweInfo[1] : null;
+      const owaspName = owaspCat && OWASP_CAT[owaspCat] ? OWASP_CAT[owaspCat][0] : null;
+      return `<div class="sans-card" onclick="window.renderCWEDetail('${esc(cweId)}')">
+        <div class="sans-rank-badge" style="background:${rankColor}18;color:${rankColor};border:1px solid ${rankColor}40">#${rank}</div>
+        <div class="sans-card-body">
+          <div class="sans-card-name">CWE-${esc(cweId)} · ${esc(name)}</div>
+          <div class="sans-card-meta">
+            <span style="font-size:10.5px;background:${color}15;border:1px solid ${color}40;color:${color};border-radius:5px;padding:1px 7px;font-weight:700">${esc(cat)}</span>
+            ${owaspName ? `<span style="font-size:10.5px;color:var(--muted)">OWASP: ${esc(owaspCat)} ${esc(owaspName)}</span>` : ''}
+          </div>
+        </div>
+        <div class="sans-score">${score.toFixed(2)}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('ihResults').innerHTML = `
+      <div class="cwe-browser">
+        ${_tabBar('sans25')}
+        <div class="ih-title-row" style="margin-bottom:8px">
+          <h2>CWE/SANS Top 25 Most Dangerous Software Weaknesses</h2>
+          <span class="ih-badge" style="background:linear-gradient(135deg,#f97316,#ef4444)">2023</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:18px">Published by MITRE · Score = frequency × severity weighting across NVD CVEs · Click any entry to open full CWE detail.</div>
+        <div class="ih-results">${cards}</div>
+      </div>`;
+  }
 
   function _showNISTRef(){
     ensureIHLayout('nist');
@@ -1022,6 +1166,7 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
       <button class="cwe-tab${active==='cwe'?' active-wa':''}" onclick="renderCWEBrowser('cwe')">OWASP Web App 2021 &nbsp;·&nbsp; ${Object.keys(CWE_DB).length} CWEs</button>
       <button class="cwe-tab${active==='api'?' active-api':''}" onclick="renderCWEBrowser('api')">OWASP API 2023 &nbsp;·&nbsp; ${apiCweCount} CWEs</button>
       <button class="cwe-tab${active==='llm'?' active-llm':''}" onclick="renderCWEBrowser('llm')">OWASP LLM 2025 &nbsp;·&nbsp; ${llmCweCount} CWEs</button>
+      <button class="cwe-tab${active==='sans25'?' active-sans':''}" onclick="renderSANS25Browser()">CWE/SANS Top 25 &nbsp;·&nbsp; 25 CWEs</button>
     </div>`;
   }
 
