@@ -627,18 +627,6 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
   /* Build reverse index: CWE ID → SANS rank (used by Standards row) */
   const _SANS_RANK = Object.fromEntries(SANS_TOP25.map(([r,id])=>[id,r]));
 
-  /* Build reverse index: CWE ID → OWASP API category */
-  const _CWE_TO_API = {};
-  for (const [cat, entry] of Object.entries(OWASP_API_DB)){
-    for (const cweId of (entry[6]||[])) _CWE_TO_API[cweId] = cat;
-  }
-
-  /* Build reverse index: CWE ID → OWASP LLM category */
-  const _CWE_TO_LLM = {};
-  for (const [cat, entry] of Object.entries(OWASP_LLM_DB)){
-    for (const cweId of (entry[6]||[])) _CWE_TO_LLM[cweId] = cat;
-  }
-
   /* Generate standards badges HTML for a list of CWE strings like ['CWE-89','CWE-79'] */
   function _cveStandardsBadges(cwes){
     if (!cwes || !cwes.length) return '';
@@ -1149,6 +1137,16 @@ body{background:var(--bg);color:var(--text);font:13.5px/1.6 'Segoe UI',system-ui
       'NEW in 2025 v2.0 · Replaces "Model Denial of Service" (LLM04:v1.1) with broader financial and operational scope',
       ['400','770','307']],
   };
+
+  /* Reverse indexes for Standards row — built after all DB consts are defined */
+  const _CWE_TO_API = {};
+  for (const [cat, entry] of Object.entries(OWASP_API_DB)){
+    for (const cweId of (entry[6]||[])) _CWE_TO_API[cweId] = cat;
+  }
+  const _CWE_TO_LLM = {};
+  for (const [cat, entry] of Object.entries(OWASP_LLM_DB)){
+    for (const cweId of (entry[6]||[])) _CWE_TO_LLM[cweId] = cat;
+  }
 
   /* ── Feature 4: CWE / OWASP Taxonomy Browser ── */
   window.openCWERef = function(arg){
